@@ -9,11 +9,13 @@ import (
 
 	"github.com/steipete/gogcli/internal/outfmt"
 	"github.com/steipete/gogcli/internal/ui"
+	"google.golang.org/api/slides/v1"
 )
 
 type SlidesReadSlideCmd struct {
 	PresentationID string `arg:"" name:"presentationId" help:"Presentation ID"`
 	SlideID        string `arg:"" name:"slideId" help:"Slide object ID (use 'slides list-slides' to find IDs)"`
+	Recursive      bool   `name:"recursive" help:"Recursively extract text from grouped elements, word art, and tables"`
 }
 
 func (c *SlidesReadSlideCmd) Run(ctx context.Context, flags *RootFlags) error {
@@ -77,21 +79,7 @@ func (c *SlidesReadSlideCmd) Run(ctx context.Context, flags *RootFlags) error {
 	// Extract text elements from the slide itself
 	var textElements []map[string]any
 	for _, el := range slide.PageElements {
-		if el.Shape != nil && el.Shape.Text != nil {
-			var text string
-			for _, te := range el.Shape.Text.TextElements {
-				if te.TextRun != nil {
-					text += te.TextRun.Content
-				}
-			}
-			text = strings.TrimRight(text, "\n")
-			if text != "" {
-				textElements = append(textElements, map[string]any{
-					"objectId": el.ObjectId,
-					"text":     text,
-				})
-			}
-		}
+		textElements = append(textElements, extractSlideTextElements(el, c.Recursive)...)
 	}
 
 	// Extract image references
@@ -158,4 +146,72 @@ func (c *SlidesReadSlideCmd) Run(ctx context.Context, flags *RootFlags) error {
 	}
 
 	return nil
+}
+
+func extractSlideTextElements(el *slides.PageElement, recursive bool) []map[string]any {
+	if el == nil {
+		return nil
+	}
+
+	var textElements []map[string]any
+
+	if text := extractTextFromPageElement(el); text != "" {
+		textElements = append(textElements, map[string]any{
+			"objectId": el.ObjectId,
+			"text":     text,
+		})
+	}
+
+	if !recursive || el.ElementGroup == nil {
+		return textElements
+	}
+
+	for _, child := range el.ElementGroup.Children {
+		textElements = append(textElements, extractSlideTextElements(child, true)...)
+	}
+
+	return textElements
+}
+
+func extractTextFromPageElement(el *slides.PageElement) string {
+	if el == nil {
+		return ""
+	}
+
+	if el.Shape != nil && el.Shape.Text != nil {
+		var text string
+		for _, te := range el.Shape.Text.TextElements {
+			if te.TextRun != nil {
+				text += te.TextRun.Content
+			}
+		}
+		return strings.TrimRight(text, "\n")
+	}
+
+	if el.WordArt != nil {
+		return strings.TrimRight(el.WordArt.RenderedText, "\n")
+	}
+
+	if el.Table != nil {
+		var parts []string
+		for _, row := range el.Table.TableRows {
+			for _, cell := range row.TableCells {
+				var cellText string
+				if cell.Text != nil {
+					for _, te := range cell.Text.TextElements {
+						if te.TextRun != nil {
+							cellText += te.TextRun.Content
+						}
+					}
+				}
+				cellText = strings.TrimRight(cellText, "\n")
+				if cellText != "" {
+					parts = append(parts, cellText)
+				}
+			}
+		}
+		return strings.Join(parts, "\n")
+	}
+
+	return ""
 }

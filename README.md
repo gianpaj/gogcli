@@ -76,26 +76,26 @@ Help:
 Before adding an account, create OAuth2 credentials from Google Cloud Console:
 
 1. Open the Google Cloud Console credentials page: https://console.cloud.google.com/apis/credentials
-1. Create a project: https://console.cloud.google.com/projectcreate
-2. Enable the APIs you need:
+2. Create a project: https://console.cloud.google.com/projectcreate
+3. Enable the APIs you need:
    - Admin SDK API: https://console.cloud.google.com/apis/api/admin.googleapis.com
    - Apps Script API: https://console.cloud.google.com/apis/api/script.googleapis.com
    - Cloud Identity API (Groups): https://console.cloud.google.com/apis/api/cloudidentity.googleapis.com
    - Gmail API: https://console.cloud.google.com/apis/api/gmail.googleapis.com
    - Google Calendar API: https://console.cloud.google.com/apis/api/calendar-json.googleapis.com
    - Google Chat API: https://console.cloud.google.com/apis/api/chat.googleapis.com
+   - Google Classroom API: https://console.cloud.google.com/apis/api/classroom.googleapis.com
    - Google Docs API: https://console.cloud.google.com/apis/api/docs.googleapis.com
    - Google Drive API: https://console.cloud.google.com/apis/api/drive.googleapis.com
-   - Google Classroom API: https://console.cloud.google.com/apis/api/classroom.googleapis.com
-   - Google Keep API: https://console.cloud.google.com/apis/api/keep.googleapis.com
-   - People API (Contacts): https://console.cloud.google.com/apis/api/people.googleapis.com
-   - Google Tasks API: https://console.cloud.google.com/apis/api/tasks.googleapis.com
-   - Google Sheets API: https://console.cloud.google.com/apis/api/sheets.googleapis.com
    - Google Forms API: https://console.cloud.google.com/apis/api/forms.googleapis.com
+   - Google Keep API: https://console.cloud.google.com/apis/api/keep.googleapis.com
+   - Google Sheets API: https://console.cloud.google.com/apis/api/sheets.googleapis.com
    - Google Slides API: https://console.cloud.google.com/apis/api/slides.googleapis.com
-3. Configure OAuth consent screen: https://console.cloud.google.com/auth/branding
-4. If your app is in "Testing", add test users: https://console.cloud.google.com/auth/audience
-5. Create OAuth client:
+   - Google Tasks API: https://console.cloud.google.com/apis/api/tasks.googleapis.com
+   - People API (Contacts): https://console.cloud.google.com/apis/api/people.googleapis.com
+4. Configure OAuth consent screen: https://console.cloud.google.com/auth/branding
+5. If your app is in "Testing", add test users: https://console.cloud.google.com/auth/audience
+6. Create OAuth client:
    - Go to https://console.cloud.google.com/auth/clients
    - Click "Create Client"
    - Application type: "Desktop app"
@@ -122,9 +122,9 @@ gog auth add you@gmail.com
 
 This will open a browser window for OAuth authorization. The refresh token is stored securely in your system keychain.
 
-Headless / remote server flows (no browser on the server):
+#### Headless / remote server flows (no browser on the server)
 
-Manual interactive flow (recommended):
+##### Manual interactive flow (recommended)
 
 ```bash
 gog auth add you@gmail.com --services user --manual
@@ -147,7 +147,7 @@ gog auth add you@gmail.com --services user --remote --step 2 --auth-url 'http://
 - The `state` is cached on disk for a short time (about 10 minutes). If it expires, rerun step 1.
 - Remote step 2 requires a redirect URL that includes `state` (state check mandatory).
 
-Browser OAuth behind proxies / remote tunnels:
+##### Browser OAuth behind proxies / remote tunnels
 
 ```bash
 gog auth add you@gmail.com --listen-addr 0.0.0.0:8080 --redirect-host gog.example.com
@@ -158,7 +158,7 @@ gog auth manage --listen-addr 0.0.0.0:8080 --redirect-host gog.example.com
 - `--redirect-host` builds `https://<host>/oauth2/callback` for the OAuth redirect URI.
 - The redirect URI must also be registered in your OAuth client settings.
 
-Direct access token flow (headless/CI, no stored refresh token):
+##### Direct access token flow (headless/CI, no stored refresh token)
 
 ```bash
 gog --access-token "$(gcloud auth print-access-token)" gmail labels list
@@ -947,6 +947,8 @@ gog slides create-from-template <templateId> "My Deck" --replace "name=John" --r
 gog slides copy <presentationId> "My Deck Copy"
 gog slides export <presentationId> --format pdf --out ./deck.pdf
 gog slides list-slides <presentationId>
+gog slides read-slide <presentationId> <slideId>
+gog slides read-slide <presentationId> <slideId> --recursive --json
 gog slides add-slide <presentationId> ./slide.png --notes "Speaker notes"
 gog slides update-notes <presentationId> <slideId> --notes "Updated notes"
 gog slides replace-slide <presentationId> <slideId> ./new-slide.png --notes "New notes"
